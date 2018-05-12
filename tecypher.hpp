@@ -22,6 +22,7 @@ class TeCypher: public QObject
 
 public:
     explicit TeCypher(QObject *parent = nullptr);
+    ~TeCypher();
 
     /**
      * @brief Loads the public key from a byte array
@@ -35,7 +36,7 @@ public:
      * @param filename file to load
      * @return RSA
      */
-    RSA *getPublicKey(QFile &filename);
+    RSA *getPublicKey(QString &filename);
 
     /**
      * @brief Loads the private key from a byte array
@@ -49,7 +50,7 @@ public:
      * @param filename The file to load
      * @return RSA
      */
-    RSA* getPrivateKey(QFile &filename);
+    RSA* getPrivateKey(QString &filename);
 
     /**
      * @brief enryptRSA
