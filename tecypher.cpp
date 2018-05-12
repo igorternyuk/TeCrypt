@@ -16,10 +16,11 @@ TeCypher::~TeCypher()
 RSA *TeCypher::getPublicKey(QByteArray &data)
 {
     const char* publicKeyStr = data.constData();
+    qDebug() << publicKeyStr;
     BIO* bio = BIO_new_mem_buf((void*)publicKeyStr, -1);
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
     RSA* rsaPubKey = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL);
-    if(rsaPubKey)
+    if(!rsaPubKey)
     {
         qCritical() << "Could not load the public key "
                     << ERR_error_string(ERR_get_error(), NULL);
@@ -40,7 +41,7 @@ RSA *TeCypher::getPrivateKey(QByteArray &data)
     BIO* bio = BIO_new_mem_buf((void*)privateKeyStr, -1);
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
     RSA* rsaPrivKey = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
-    if(rsaPrivKey)
+    if(!rsaPrivKey)
     {
         qCritical() << "Could not load the private key "
                     << ERR_error_string(ERR_get_error(), NULL);
