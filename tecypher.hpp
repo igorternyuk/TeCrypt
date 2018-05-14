@@ -15,6 +15,7 @@
 #define IV_SIZE 32
 #define BLOCK_SIZE 256
 #define SALT_SIZE 8
+#define ROUNDS 1
 
 class TeCypher: public QObject
 {

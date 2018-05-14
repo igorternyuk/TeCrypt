@@ -94,10 +94,9 @@ void testAES()
     QByteArray encryptedMsg = cypher.encryptAES(passphrase, msg);
     qDebug() << "Encrypted message:";
     qDebug() << encryptedMsg;
-   /* QByteArray decryptedMsg = cypher.decryptRSA(privKey, encryptedMsg);
+    QByteArray decryptedMsg = cypher.decryptAES(passphrase, encryptedMsg);
     qDebug() << "Decrypted message:";
-    qDebug() << decryptedMsg;*/
-
+    qDebug() << decryptedMsg;
 }
 
 int main(int argc, char *argv[])

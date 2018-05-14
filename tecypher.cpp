@@ -111,7 +111,7 @@ QByteArray TeCypher::decryptRSA(RSA *key, QByteArray &data, bool isPrivate)
 QByteArray TeCypher::encryptAES(QByteArray &passphrase, QByteArray &data)
 {
     QByteArray salz = this->randomBytes(SALT_SIZE);
-    const int rounds = 1;
+    const int rounds = ROUNDS;
     unsigned char key[KEY_SIZE];
     unsigned char iv[IV_SIZE];
 
@@ -177,13 +177,81 @@ QByteArray TeCypher::encryptAES(QByteArray &passphrase, QByteArray &data)
     finished.append("Salted__");
     finished.append(salz);
     finished.append(encryptedMessage);
+    EVP_CIPHER_CTX_cleanup(&ctx);
     free(cipher_text);
     return finished;
 }
 
 QByteArray TeCypher::decryptAES(QByteArray &passphrase, QByteArray &data)
 {
+    QByteArray salz = data.mid(0, SALT_SIZE);
+    if(QString(data.mid(0, SALT_SIZE)) == "Salted__")
+    {
+        salz = data.mid(SALT_SIZE, SALT_SIZE);
+        data = data.mid(2 * SALT_SIZE);
+    }
+    else
+    {
+        qWarning() << "Could not load salt from data!";
+        salz = this->randomBytes(SALT_SIZE);
+    }
 
+    const int rounds = ROUNDS;
+    unsigned char key[KEY_SIZE];
+    unsigned char iv[IV_SIZE];
+
+    const unsigned char* salt = (const unsigned char*)salz.constData();
+    const unsigned char* password = (const unsigned char*)passphrase.constData();
+
+    int keySize = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha1(), salt, password,
+                           passphrase.length(), rounds, key, iv);
+
+    if(keySize != KEY_SIZE)
+    {
+        qCritical() << "EVP_BytesToKey() error: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    EVP_CIPHER_CTX ctx;
+    EVP_CIPHER_CTX_init(&ctx);
+
+    if(!EVP_DecryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv))
+    {
+        qCritical() << "EVP_DecryptInit_ex failed: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    char* input = data.data();
+    int len = data.size();
+    //char *out;
+    int p_len = len, f_len = 0;
+    //f_len - final text length
+    //p_len = decrypted plain text length
+    unsigned char* plain_text = (unsigned char*)malloc(p_len + AES_BLOCK_SIZE);
+
+    if(!EVP_DecryptUpdate(&ctx, plain_text, &p_len, (unsigned char*)input, len))
+    {
+        qCritical() << "EVP_DecryptUpdate: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    if(!EVP_DecryptFinal(&ctx, plain_text + p_len, &f_len))
+    {
+        qCritical() << "EVP_DecryptFinal: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    len = p_len + f_len;
+    //out = (char*)plain_text;
+    EVP_CIPHER_CTX_cleanup(&ctx);
+
+    QByteArray decryptedMessage = QByteArray(reinterpret_cast<char*>(plain_text), len);
+    free(plain_text);
+    return decryptedMessage;
 }
 
 QByteArray TeCypher::randomBytes(int size)
