@@ -54,19 +54,23 @@ public:
 
     /**
      * @brief enryptRSA
-     * @param key The public key
+     * @param key either RSA public key or RSA private key
      * @param data The data to enrypt
+     * @param isPublic equals true if the key is RSA public key
+     *  and false in the contrary case
      * @return encrypted data
      */
-    QByteArray enryptRSA(RSA* key, QByteArray &data);
+    QByteArray enryptRSA(RSA* key, QByteArray &data, bool isPublic = true);
 
     /**
      * @brief decryptRSA
-     * @param key The private key
+     * @param key either RSA private key or RSA public key
      * @param data The data to decrypt
+     * @param isPrivate equals true if the key is RSA private key
+     *  and false in the contrary case
      * @return  decrypted data
      */
-    QByteArray decryptRSA(RSA* key, QByteArray &data);
+    QByteArray decryptRSA(RSA* key, QByteArray &data, bool isPrivate = true);
 
     /**
      * @brief encrypts a byte array with AES 256 CBC

@@ -53,6 +53,7 @@ QByteArray getPublicKey()
 
 void testRSA()
 {
+    qDebug() << "Testing RSA...";
     qDebug() << "Loading keys...";
     QByteArray testPublicKey = getPublicKey();
     QByteArray testPrivateKey = getPrivateKey();
@@ -76,15 +77,34 @@ void testRSA()
     QByteArray decryptedMsg = cypher.decryptRSA(privKey, encryptedMsg);
     qDebug() << "Decrypted message:";
     qDebug() << decryptedMsg;
-    RSA_free(pubKey);
-    RSA_free(privKey);
+    cypher.freeRSAKey(pubKey);
+    cypher.freeRSAKey(privKey);
+
     qDebug() << "The memory was freed...";
+}
+
+void testAES()
+{
+    qDebug() << "Testing AES...";
+    QByteArray passphrase = "contrasenya";
+    TeCypher cypher;
+    qDebug() << "Message to encrypte:";
+    QByteArray msg = "The quick brown fox jumps over the lazy dog.";
+    qDebug() << msg;
+    QByteArray encryptedMsg = cypher.encryptAES(passphrase, msg);
+    qDebug() << "Encrypted message:";
+    qDebug() << encryptedMsg;
+   /* QByteArray decryptedMsg = cypher.decryptRSA(privKey, encryptedMsg);
+    qDebug() << "Decrypted message:";
+    qDebug() << decryptedMsg;*/
+
 }
 
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-    testRSA();
+    //testRSA();
+    testAES();
     signal(SIGINT, cleanup);
     return app.exec();
 }

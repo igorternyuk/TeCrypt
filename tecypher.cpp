@@ -1,5 +1,4 @@
 #include "tecypher.hpp"
-
 #include <QDebug>
 
 TeCypher::TeCypher(QObject *parent):
@@ -56,7 +55,7 @@ RSA *TeCypher::getPrivateKey(QString &filename)
     return this->getPrivateKey(byteArray);
 }
 
-QByteArray TeCypher::enryptRSA(RSA *key, QByteArray &data)
+QByteArray TeCypher::enryptRSA(RSA *key, QByteArray &data, bool isPublic)
 {
     QByteArray buffer;
     int dataSize = data.length();
@@ -64,7 +63,17 @@ QByteArray TeCypher::enryptRSA(RSA *key, QByteArray &data)
     int rsaKeySize = RSA_size(key);
 
     unsigned char* encryptedData = (unsigned char*)malloc(rsaKeySize);
-    int resultLen = RSA_public_encrypt(dataSize, str, encryptedData, key, PADDING);
+    int resultLen = -1;
+    if(isPublic)
+    {
+        resultLen = RSA_public_encrypt(dataSize, str, encryptedData, key, PADDING);
+    }
+    else
+    {
+        resultLen = RSA_private_encrypt(dataSize, str, encryptedData, key, PADDING);
+    }
+    //int resultLen = RSA_public_encrypt(dataSize, str, encryptedData, key, PADDING);
+    //int resultLen = RSA_private_encrypt(dataSize, str, encryptedData, key, PADDING);
     if(resultLen == -1)
     {
         qCritical() << "Could not encrypt: " << ERR_error_string(ERR_get_error(), NULL);
@@ -74,25 +83,102 @@ QByteArray TeCypher::enryptRSA(RSA *key, QByteArray &data)
     return buffer;
 }
 
-QByteArray TeCypher::decryptRSA(RSA *key, QByteArray &data)
+QByteArray TeCypher::decryptRSA(RSA *key, QByteArray &data, bool isPrivate)
 {
     QByteArray buffer;
     const unsigned char* encyptedData = (const unsigned char*)data.constData();
     int rsaKeyLen = RSA_size(key);
     unsigned char* decryptedData = (unsigned char*)malloc(rsaKeyLen);
-    int resultLen = RSA_private_decrypt(rsaKeyLen, encyptedData, decryptedData, key, PADDING);
+    int resultLen = -1;
+    if(isPrivate)
+    {
+        resultLen = RSA_private_decrypt(rsaKeyLen, encyptedData, decryptedData, key, PADDING);
+    }
+    else
+    {
+        resultLen = RSA_public_decrypt(rsaKeyLen, encyptedData, decryptedData, key, PADDING);
+    }
     if(resultLen == -1)
     {
         qCritical() << "Could not decrypt: " << ERR_error_string(ERR_get_error(), NULL);
         return buffer;
     }
     buffer = QByteArray::fromRawData((const char*)decryptedData, resultLen);
+    free(decryptedData);
     return buffer;
 }
 
 QByteArray TeCypher::encryptAES(QByteArray &passphrase, QByteArray &data)
 {
+    QByteArray salz = this->randomBytes(SALT_SIZE);
+    const int rounds = 1;
+    unsigned char key[KEY_SIZE];
+    unsigned char iv[IV_SIZE];
 
+    const unsigned char* salt = (const unsigned char*)salz.constData();
+    const unsigned char* password = (const unsigned char*)passphrase.constData();
+
+    //Create the key and the initialization vector(iv) based on the passphrase and the salt
+    int keySize = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha1(), salt, password,
+                           passphrase.length(), rounds, key, iv);
+
+    if(keySize != KEY_SIZE)
+    {
+        qCritical() << "EVP_BytesToKey() error: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    EVP_CIPHER_CTX ctx;
+    EVP_CIPHER_CTX_init(&ctx);
+
+    if(!EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(),
+                          NULL, key, iv))
+    {
+        qCritical() << "EVP_EncryptInit_ex failed: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    char *input = data.data();
+    int len = data.size();
+    //char *out;
+    int c_len = len + AES_BLOCK_SIZE;
+    int f_len = 0;
+    unsigned char* cipher_text = (unsigned char* )malloc(c_len);
+
+    //Start enctyption egine
+    if(!EVP_EncryptInit_ex(&ctx, NULL, NULL, NULL, NULL))
+    {
+        qCritical() << "EVP_EncryptInit_ex failed: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    if(!EVP_EncryptUpdate(&ctx, cipher_text, &c_len, (unsigned char*)input, len))
+    {
+        qCritical() << "EVP_EncodeUpdate failed: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    if(!EVP_EncryptFinal(&ctx, cipher_text + c_len, &f_len))
+    {
+        qCritical() << "EVP_EncryptFinal failed: " <<
+                       ERR_error_string(ERR_get_error(), NULL);
+        return QByteArray();
+    }
+
+    len = c_len + f_len;
+    EVP_CIPHER_CTX_cipher(&ctx);
+
+    QByteArray encryptedMessage = QByteArray(reinterpret_cast<char*>(cipher_text), len);
+    QByteArray finished;
+    finished.append("Salted__");
+    finished.append(salz);
+    finished.append(encryptedMessage);
+    free(cipher_text);
+    return finished;
 }
 
 QByteArray TeCypher::decryptAES(QByteArray &passphrase, QByteArray &data)
@@ -102,12 +188,15 @@ QByteArray TeCypher::decryptAES(QByteArray &passphrase, QByteArray &data)
 
 QByteArray TeCypher::randomBytes(int size)
 {
-
+    unsigned char buf[size];
+    RAND_bytes(buf, size);
+    QByteArray array = QByteArray(reinterpret_cast<char*>(buf), size);
+    return array;
 }
 
 void TeCypher::freeRSAKey(RSA *key)
 {
-
+    RSA_free(key);
 }
 
 void TeCypher::initialize()
@@ -139,5 +228,12 @@ QByteArray TeCypher::readFile(const QString &filename)
 
 void TeCypher::writeFile(const QString &filename, QByteArray &data)
 {
-
+    QFile fo(filename);
+    if(!fo.open(QFile::WriteOnly))
+    {
+        qCritical() << fo.errorString();
+        return;
+    }
+    fo.write(data);
+    fo.close();
 }
