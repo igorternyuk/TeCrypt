@@ -13,6 +13,7 @@ static void cleanup(int sig)
         qApp->quit();
     }
 }
+
 QByteArray getPrivateKey()
 {
     QByteArray byteArray;
@@ -66,6 +67,15 @@ void testRSA()
     {
         qDebug() << "Some errors occured...";
     }
+    qDebug() << "Message to encrypte:";
+    QByteArray msg = "The quick brown fox jumps over the lazy dog.";
+    qDebug() << msg;
+    qDebug() << "Encrypted message:";
+    QByteArray encryptedMsg = cypher.enryptRSA(pubKey, msg);
+    qDebug() << encryptedMsg.toBase64();
+    QByteArray decryptedMsg = cypher.decryptRSA(privKey, encryptedMsg);
+    qDebug() << "Decrypted message:";
+    qDebug() << decryptedMsg;
     RSA_free(pubKey);
     RSA_free(privKey);
     qDebug() << "The memory was freed...";
