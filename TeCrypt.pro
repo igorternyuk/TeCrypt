@@ -9,7 +9,7 @@ LIBS += /usr/local/ssl/lib/libcrypto.a
 LIBS += -ldl
 CONFIG -= app_bundle
 SOURCES += main.cpp \
-    tecypher.cpp
+    tecipher.cpp
 
 HEADERS += \
-    tecypher.hpp
+    tecipher.hpp

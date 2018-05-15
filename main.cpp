@@ -1,4 +1,4 @@
-#include "tecypher.hpp"
+#include "tecipher.hpp"
 #include <QCoreApplication>
 #include <QFile>
 #include <QTextStream>
@@ -64,9 +64,9 @@ void testRSA()
     qDebug() << "Loading keys...";
     QByteArray testPublicKey = getPublicKey();
     QByteArray testPrivateKey = getPrivateKey();
-    TeCypher cypher;
-    RSA* pubKey = cypher.getPublicRSAKey(testPublicKey);
-    RSA* privKey = cypher.getPrivateRSAKey(testPrivateKey);
+    TeCipher cipher;
+    RSA* pubKey = cipher.getPublicRSAKey(testPublicKey);
+    RSA* privKey = cipher.getPrivateRSAKey(testPrivateKey);
 
     if(pubKey && privKey)
     {
@@ -80,14 +80,14 @@ void testRSA()
     QByteArray msg = "The quick brown fox jumps over the lazy dog!!!";
     qDebug() << msg;
     qDebug() << "Encrypted message:";
-    QByteArray encryptedMsg = cypher.enryptRSA(pubKey, msg);
+    QByteArray encryptedMsg = cipher.enryptRSA(pubKey, msg);
     qDebug() << encryptedMsg.toBase64();
-    QByteArray decryptedMsg = cypher.decryptRSA(privKey, encryptedMsg);
+    QByteArray decryptedMsg = cipher.decryptRSA(privKey, encryptedMsg);
     qDebug() << "Decrypted message:";
     qDebug() << decryptedMsg;
 
-    cypher.freeRSAKey(pubKey);
-    cypher.freeRSAKey(privKey);
+    cipher.freeRSAKey(pubKey);
+    cipher.freeRSAKey(privKey);
 
     qDebug() << "The memory was freed...";
 }
@@ -122,14 +122,14 @@ bool writeFile(const QString &filename, QByteArray &data)
 
 bool encryptCombined()
 {
-    TeCypher cypher;
+    TeCipher cipher;
     QByteArray pubKey = getPublicKey();
-    RSA* rsaPubKey = cypher.getPublicRSAKey(pubKey);
-    QByteArray passphrase = cypher.randomBytes(8); //Here must be user password
-    QByteArray encryptedKey = cypher.enryptRSA(rsaPubKey, passphrase);
+    RSA* rsaPubKey = cipher.getPublicRSAKey(pubKey);
+    QByteArray passphrase = cipher.randomBytes(8); //Here must be user password
+    QByteArray encryptedKey = cipher.enryptRSA(rsaPubKey, passphrase);
     qDebug() << "Encrypted RSA key => " << encryptedKey;
     QByteArray plainText = "The quick brown FOX jumps over the lazy dog!!!.";
-    QByteArray encryptedData = cypher.encryptAES(passphrase, plainText);
+    QByteArray encryptedData = cipher.encryptAES(passphrase, plainText);
     if(encryptedData.isEmpty())
     {
         qCritical() << "Could not encrypt";
@@ -139,13 +139,13 @@ bool encryptCombined()
     out.append(encryptedKey);
     out.append(encryptedData);
     qDebug() << "Encrypted data" << encryptedData;
-    cypher.freeRSAKey(rsaPubKey);
+    cipher.freeRSAKey(rsaPubKey);
     return writeFile("fox.enc", out);
 }
 
 bool decryptCombined()
 {
-    TeCypher cypher;
+    TeCipher cipher;
     QByteArray data;
 
     QString filename = "fox.enc";
@@ -168,13 +168,13 @@ bool decryptCombined()
     QByteArray encryptedData = data.mid(256);
 
     QByteArray key = getPrivateKey(); //The problem
-    RSA* privateKey = cypher.getPrivateRSAKey(key);
-    QByteArray passphrase = cypher.decryptRSA(privateKey, encryptedKey);
-    cypher.freeRSAKey(privateKey);
+    RSA* privateKey = cipher.getPrivateRSAKey(key);
+    QByteArray passphrase = cipher.decryptRSA(privateKey, encryptedKey);
+    cipher.freeRSAKey(privateKey);
     qDebug() << "AES passphrase: " << passphrase;
 
 
-    QByteArray plainText = cypher.decryptAES(passphrase, encryptedData);
+    QByteArray plainText = cipher.decryptAES(passphrase, encryptedData);
     if(plainText.isEmpty())
     {
         qCritical() << "Could not decrypt file";
@@ -195,19 +195,19 @@ void testCombinedEncryption()
 
 void testCombinedEncryption2()
 {
-    TeCypher cypher;
-    cypher.loadPublicKeyByteArrayFromFile("public.pem");
-    cypher.loadPrivateKeyByteArrayFromFile("private.pem");
+    TeCipher cipher;
+    cipher.loadPublicKeyByteArrayFromFile("public.pem");
+    cipher.loadPrivateKeyByteArrayFromFile("private.pem");
     QByteArray password = "!!!@@@###$$$^^^&&&&5555mp3";
     QByteArray textToEcrypt = "The quick brown FOX jumps over the lazy dog!!!!!!!!";
     qDebug() << "Text to encrypt: ";
     qDebug() << textToEcrypt;
     QByteArray encryptedBytes;
-    cypher.encryptWithCombinedMethod(password, textToEcrypt, encryptedBytes);
+    cipher.encryptWithCombinedMethod(password, textToEcrypt, encryptedBytes);
     qDebug() << "Encrypted bytes: ";
     qDebug() << encryptedBytes;
     QByteArray decryptedBytes;
-    cypher.decryptWithCombinedMethod(password, encryptedBytes, decryptedBytes);
+    cipher.decryptWithCombinedMethod(password, encryptedBytes, decryptedBytes);
     qDebug() << "Decrypted bytes: ";
     qDebug() << decryptedBytes;
 }
@@ -216,14 +216,14 @@ void testAES()
 {
     qDebug() << "Testing AES...";
     QByteArray passphrase = "contrasenya";
-    TeCypher cypher;
+    TeCipher cipher;
     qDebug() << "Message to encrypte:";
     QByteArray msg = "The quick brown fox jumps over the lazy dog.";
     qDebug() << msg;
-    QByteArray encryptedMsg = cypher.encryptAES(passphrase, msg);
+    QByteArray encryptedMsg = cipher.encryptAES(passphrase, msg);
     qDebug() << "Encrypted message:";
     qDebug() << encryptedMsg;
-    QByteArray decryptedMsg = cypher.decryptAES(passphrase, encryptedMsg);
+    QByteArray decryptedMsg = cipher.decryptAES(passphrase, encryptedMsg);
     qDebug() << "Decrypted message:";
     qDebug() << decryptedMsg;
 }

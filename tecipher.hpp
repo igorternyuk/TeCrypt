@@ -17,13 +17,13 @@
 #define SALT_SIZE 8
 #define ROUNDS 1
 
-class TeCypher: public QObject
+class TeCipher: public QObject
 {
     Q_OBJECT
 
 public:
-    explicit TeCypher(QObject *parent = nullptr);
-    ~TeCypher();
+    explicit TeCipher(QObject *parent = nullptr);
+    ~TeCipher();
 
     /**
      * @brief loadPublicKeyByteArrayFromFile

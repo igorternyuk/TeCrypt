@@ -1,19 +1,19 @@
-#include "tecypher.hpp"
+#include "tecipher.hpp"
 #include <QFile>
 #include <QDebug>
 
-TeCypher::TeCypher(QObject *parent):
+TeCipher::TeCipher(QObject *parent):
     QObject(parent)
 {
     initialize();
 }
 
-TeCypher::~TeCypher()
+TeCipher::~TeCipher()
 {
     finalize();
 }
 
-bool TeCypher::loadPublicKeyByteArrayFromFile(const QString &pathToPublicKeyFile)
+bool TeCipher::loadPublicKeyByteArrayFromFile(const QString &pathToPublicKeyFile)
 {
     QFile fi(pathToPublicKeyFile);
     if(!fi.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -33,7 +33,7 @@ bool TeCypher::loadPublicKeyByteArrayFromFile(const QString &pathToPublicKeyFile
     return true;
 }
 
-bool TeCypher::loadPrivateKeyByteArrayFromFile(const QString &pathToPrivateKeyFile)
+bool TeCipher::loadPrivateKeyByteArrayFromFile(const QString &pathToPrivateKeyFile)
 {
     QFile fi(pathToPrivateKeyFile);
     if(!fi.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -52,7 +52,7 @@ bool TeCypher::loadPrivateKeyByteArrayFromFile(const QString &pathToPrivateKeyFi
 }
 
 
-RSA *TeCypher::getPublicRSAKey(QByteArray &data)
+RSA *TeCipher::getPublicRSAKey(QByteArray &data)
 {
     const char* publicKeyStr = data.constData();
     //qDebug() << publicKeyStr;
@@ -70,13 +70,13 @@ RSA *TeCypher::getPublicRSAKey(QByteArray &data)
     return rsaPubKey;
 }
 
-RSA *TeCypher::getPublicRSAKey(QString &filename)
+RSA *TeCipher::getPublicRSAKey(QString &filename)
 {
     QByteArray byteArray = readFile(filename);
     return this->getPublicRSAKey(byteArray);
 }
 
-RSA *TeCypher::getPrivateRSAKey(QByteArray &data)
+RSA *TeCipher::getPrivateRSAKey(QByteArray &data)
 {
     const char* privateKeyStr = data.constData();
     //qDebug() << privateKeyStr;
@@ -94,13 +94,13 @@ RSA *TeCypher::getPrivateRSAKey(QByteArray &data)
     return rsaPrivKey;
 }
 
-RSA *TeCypher::getPrivateRSAKey(QString &filename)
+RSA *TeCipher::getPrivateRSAKey(QString &filename)
 {
     QByteArray byteArray = readFile(filename);
     return this->getPrivateRSAKey(byteArray);
 }
 
-QByteArray TeCypher::enryptRSA(RSA *key, QByteArray &data, bool isPublic)
+QByteArray TeCipher::enryptRSA(RSA *key, QByteArray &data, bool isPublic)
 {
     QByteArray finished;
     int dataSize = data.length();
@@ -133,7 +133,7 @@ QByteArray TeCypher::enryptRSA(RSA *key, QByteArray &data, bool isPublic)
     return finished;
 }
 
-QByteArray TeCypher::decryptRSA(RSA *key, QByteArray &data, bool isPrivate)
+QByteArray TeCipher::decryptRSA(RSA *key, QByteArray &data, bool isPrivate)
 {
     QByteArray finished;
     const unsigned char* encryptedData = (const unsigned char*)data.constData();
@@ -165,7 +165,7 @@ QByteArray TeCypher::decryptRSA(RSA *key, QByteArray &data, bool isPrivate)
     return finished;
 }
 
-QByteArray TeCypher::encryptAES(QByteArray &passphrase, QByteArray &data)
+QByteArray TeCipher::encryptAES(QByteArray &passphrase, QByteArray &data)
 {
     QByteArray salz = this->randomBytes(SALT_SIZE);
     const int rounds = ROUNDS;
@@ -249,7 +249,7 @@ QByteArray TeCypher::encryptAES(QByteArray &passphrase, QByteArray &data)
     return finished;
 }
 
-QByteArray TeCypher::decryptAES(QByteArray &passphrase, QByteArray &data)
+QByteArray TeCipher::decryptAES(QByteArray &passphrase, QByteArray &data)
 {
     QByteArray salz = data.mid(0, SALT_SIZE);
     if(QString(data.mid(0, SALT_SIZE)) == "Salted__")
@@ -329,7 +329,7 @@ QByteArray TeCypher::decryptAES(QByteArray &passphrase, QByteArray &data)
     return decryptedMessage;
 }
 
-bool TeCypher::encryptWithCombinedMethod(QByteArray &passphrase,
+bool TeCipher::encryptWithCombinedMethod(QByteArray &passphrase,
                                          QByteArray &toEncrypt,
                                          QByteArray &encrypted)
 {
@@ -353,7 +353,7 @@ bool TeCypher::encryptWithCombinedMethod(QByteArray &passphrase,
     return true;
 }
 
-bool TeCypher::decryptWithCombinedMethod(QByteArray &passphrase,
+bool TeCipher::decryptWithCombinedMethod(QByteArray &passphrase,
                                          QByteArray &toDecrypt,
                                          QByteArray &decrypted)
 {
@@ -403,7 +403,7 @@ bool TeCypher::decryptWithCombinedMethod(QByteArray &passphrase,
     return true;
 }
 
-QByteArray TeCypher::randomBytes(int size)
+QByteArray TeCipher::randomBytes(int size)
 {
     unsigned char buf[size];
     RAND_bytes(buf, size);
@@ -411,30 +411,30 @@ QByteArray TeCypher::randomBytes(int size)
     return array;
 }
 
-void TeCypher::freeRSAKey(RSA *key)
+void TeCipher::freeRSAKey(RSA *key)
 {
     RSA_free(key);
 }
 
-QString TeCypher::getLastError() const
+QString TeCipher::getLastError() const
 {
     return mLastError;
 }
 
-void TeCypher::initialize()
+void TeCipher::initialize()
 {
     ERR_load_CRYPTO_strings();
     OpenSSL_add_all_algorithms();
     OPENSSL_config(NULL);
 }
 
-void TeCypher::finalize()
+void TeCipher::finalize()
 {
     EVP_cleanup();
     ERR_free_strings();
 }
 
-QByteArray TeCypher::readFile(const QString &filename)
+QByteArray TeCipher::readFile(const QString &filename)
 {
     QByteArray byteArray;
     QFile fi(filename);
@@ -449,7 +449,7 @@ QByteArray TeCypher::readFile(const QString &filename)
     return byteArray;
 }
 
-void TeCypher::readFile(const QString &filename, QByteArray &data)
+void TeCipher::readFile(const QString &filename, QByteArray &data)
 {
     QByteArray byteArray;
     QFile fi(filename);
@@ -463,7 +463,7 @@ void TeCypher::readFile(const QString &filename, QByteArray &data)
     fi.close();
 }
 
-void TeCypher::writeFile(const QString &filename, QByteArray &data)
+void TeCipher::writeFile(const QString &filename, QByteArray &data)
 {
     QFile fo(filename);
     if(!fo.open(QFile::WriteOnly))
