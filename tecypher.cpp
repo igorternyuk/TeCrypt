@@ -12,10 +12,10 @@ TeCypher::~TeCypher()
     finalize();
 }
 
-RSA *TeCypher::getPublicKey(QByteArray &data)
+RSA *TeCypher::getPublicRSAKey(QByteArray &data)
 {
     const char* publicKeyStr = data.constData();
-    qDebug() << publicKeyStr;
+    //qDebug() << publicKeyStr;
     BIO* bio = BIO_new_mem_buf((void*)publicKeyStr, -1);
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
     RSA* rsaPubKey = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL);
@@ -28,16 +28,16 @@ RSA *TeCypher::getPublicKey(QByteArray &data)
     return rsaPubKey;
 }
 
-RSA *TeCypher::getPublicKey(QString &filename)
+RSA *TeCypher::getPublicRSAKey(QString &filename)
 {
     QByteArray byteArray = readFile(filename);
-    return this->getPublicKey(byteArray);
+    return this->getPublicRSAKey(byteArray);
 }
 
-RSA *TeCypher::getPrivateKey(QByteArray &data)
+RSA *TeCypher::getPrivateRSAKey(QByteArray &data)
 {
     const char* privateKeyStr = data.constData();
-    qDebug() << privateKeyStr;
+    //qDebug() << privateKeyStr;
     BIO* bio = BIO_new_mem_buf((void*)privateKeyStr, -1);
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
     RSA* rsaPrivKey = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
@@ -50,10 +50,10 @@ RSA *TeCypher::getPrivateKey(QByteArray &data)
     return rsaPrivKey;
 }
 
-RSA *TeCypher::getPrivateKey(QString &filename)
+RSA *TeCypher::getPrivateRSAKey(QString &filename)
 {
     QByteArray byteArray = readFile(filename);
-    return this->getPrivateKey(byteArray);
+    return this->getPrivateRSAKey(byteArray);
 }
 
 QByteArray TeCypher::enryptRSA(RSA *key, QByteArray &data, bool isPublic)
@@ -260,6 +260,91 @@ QByteArray TeCypher::decryptAES(QByteArray &passphrase, QByteArray &data)
     QByteArray decryptedMessage = QByteArray(reinterpret_cast<char*>(plain_text), len);
     free(plain_text);
     return decryptedMessage;
+}
+
+bool TeCypher::encryptFileWithCombinedMethod(QByteArray &passphrase,
+                                             const QString &pathToInputFile,
+                                             const QString &pathToOutputFile)
+{
+
+}
+
+bool TeCypher::encryptTextWithCombinedMethod(QByteArray &passphrase,
+                                             const QString &textToEncrypt,
+                                             QString &encryptedText)
+{
+/*
+    TeCypher cypher;
+    QByteArray pubKey = getPublicKey();
+    RSA* rsaPubKey = cypher.getPublicKey(pubKey);
+    QByteArray passphrase = cypher.randomBytes(8); //Here must be user password
+    QByteArray encryptedKey = cypher.enryptRSA(rsaPubKey, passphrase);
+    qDebug() << "Encrypted RSA key => " << encryptedKey;
+    QByteArray plainText = "The quick brown FOX jumps over the lazy dog!!!.";
+    QByteArray encryptedData = cypher.encryptAES(passphrase, plainText);
+    if(encryptedData.isEmpty())
+    {
+        qCritical() << "Could not encrypt";
+        return false;
+    }
+    QByteArray out;
+    out.append(encryptedKey);
+    out.append(encryptedData);
+    qDebug() << "Encrypted data" << encryptedData;
+    cypher.freeRSAKey(rsaPubKey);
+    return writeFile("fox.enc", out);
+*/
+}
+
+bool TeCypher::decryptFileWithCombinedMethod(QByteArray &passphrase,
+                                             const QString &pathToInputFile,
+                                             const QString &pathToOutputFile)
+{
+
+}
+
+bool TeCypher::decryptTextWithCombinedMethod(QByteArray &passphrase,
+                                             const QString &textToDecrypt,
+                                             QString &decryptedText)
+{
+/*
+    TeCypher cypher;
+    QByteArray data;
+
+    QString filename = "fox.enc";
+    if(!readFile(filename, data))
+    {
+        qCritical() << "Could not open file: " << filename;
+        return false;
+    }
+
+    QByteArray header("Salted__");
+    int pos = data.indexOf(header);
+
+    if(pos == -1)
+    {
+        qCritical() << "Could find the beginning of the encypted file";
+        return false;
+    }
+
+    QByteArray encryptedKey = data.mid(0, 256);
+    QByteArray encryptedData = data.mid(256);
+
+    QByteArray key = getPrivateKey(); //The problem
+    RSA* privateKey = cypher.getPrivateKey(key);
+    QByteArray passphrase = cypher.decryptRSA(privateKey, encryptedKey);
+    cypher.freeRSAKey(privateKey);
+    qDebug() << "AES passphrase: " << passphrase;
+
+    QByteArray plainText = cypher.decryptAES(passphrase, encryptedData);
+    if(plainText.isEmpty())
+    {
+        qCritical() << "Could not decrypt file";
+        return false;
+    }
+
+    return writeFile("fox.txt", plainText);
+*/
 }
 
 QByteArray TeCypher::randomBytes(int size)

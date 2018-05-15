@@ -92,28 +92,32 @@ void testRSA()
     qDebug() << "The memory was freed...";
 }
 
-void readFile(const QString &filename, QByteArray &data)
+bool readFile(const QString &filename, QByteArray &data)
 {
     QFile file(filename);
     if(!file.open(QFile::ReadOnly))
     {
         qCritical() << "Could not open file " << filename;
-        return;
+        return false;
     }
     data = file.readAll();
     file.close();
+    return true;
 }
 
-void writeFile(const QString &filename, QByteArray &data)
+bool writeFile(const QString &filename, QByteArray &data)
 {
     QFile file(filename);
+
     if(!file.open(QFile::WriteOnly))
     {
         qCritical() << "Could not open file " << filename;
-        return;
+        return false;
     }
+
     file.write(data);
     file.close();
+    return true;
 }
 
 bool encryptCombined()
@@ -121,11 +125,71 @@ bool encryptCombined()
     TeCypher cypher;
     QByteArray pubKey = getPublicKey();
     RSA* rsaPubKey = cypher.getPublicKey(pubKey);
+    QByteArray passphrase = cypher.randomBytes(8); //Here must be user password
+    QByteArray encryptedKey = cypher.enryptRSA(rsaPubKey, passphrase);
+    qDebug() << "Encrypted RSA key => " << encryptedKey;
+    QByteArray plainText = "The quick brown FOX jumps over the lazy dog!!!.";
+    QByteArray encryptedData = cypher.encryptAES(passphrase, plainText);
+    if(encryptedData.isEmpty())
+    {
+        qCritical() << "Could not encrypt";
+        return false;
+    }
+    QByteArray out;
+    out.append(encryptedKey);
+    out.append(encryptedData);
+    qDebug() << "Encrypted data" << encryptedData;
+    cypher.freeRSAKey(rsaPubKey);
+    return writeFile("fox.enc", out);
 }
 
 bool decryptCombined()
 {
+    TeCypher cypher;
+    QByteArray data;
 
+    QString filename = "fox.enc";
+    if(!readFile(filename, data))
+    {
+        qCritical() << "Could not open file: " << filename;
+        return false;
+    }
+
+    QByteArray header("Salted__");
+    int pos = data.indexOf(header);
+
+    if(pos == -1)
+    {
+        qCritical() << "Could find the beginning of the encypted file";
+        return false;
+    }
+
+    QByteArray encryptedKey = data.mid(0, 256);
+    QByteArray encryptedData = data.mid(256);
+
+    QByteArray key = getPrivateKey(); //The problem
+    RSA* privateKey = cypher.getPrivateKey(key);
+    QByteArray passphrase = cypher.decryptRSA(privateKey, encryptedKey);
+    cypher.freeRSAKey(privateKey);
+    qDebug() << "AES passphrase: " << passphrase;
+
+    QByteArray plainText = cypher.decryptAES(passphrase, encryptedData);
+    if(plainText.isEmpty())
+    {
+        qCritical() << "Could not decrypt file";
+        return false;
+    }
+
+    return writeFile("fox.txt", plainText);
+}
+
+void testCombinedEncryption()
+{
+    qDebug() << "Combined encryption test...";
+    if(encryptCombined())
+    {
+        decryptCombined();
+    }
 }
 
 void testAES()
@@ -149,6 +213,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     testRSA();
     testAES();
+    testCombinedEncryption();
     signal(SIGINT, cleanup);
     return app.exec();
 }

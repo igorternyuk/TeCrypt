@@ -90,8 +90,21 @@ public:
      */
     QByteArray decryptAES(QByteArray &passphrase, QByteArray &data);
 
-    bool encryptCombined();
-    bool decryptCombined();
+    bool encryptFileWithCombinedMethod(QByteArray &passphrase,
+                                       const QString &pathToInputFile,
+                                       const QString &pathToOutputFile);
+
+    bool encryptTextWithCombinedMethod(QByteArray &passphrase,
+                                       const QString &textToEncrypt,
+                                       QString &encryptedText);
+
+    bool decryptFileWithCombinedMethod(QByteArray &passphrase,
+                                       const QString &pathToInputFile,
+                                       const QString &pathToOutputFile);
+
+    bool decryptTextWithCombinedMethod(QByteArray &passphrase,
+                                       const QString &textToDecrypt,
+                                       QString &decryptedText);
 
     QByteArray randomBytes(int size);
 
