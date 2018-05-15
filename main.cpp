@@ -14,6 +14,13 @@ static void cleanup(int sig)
     }
 }
 
+/*
+Generate a private key for RSA:
+openssl genrsa -out private.pem 2048
+Generate the public key for private key:
+openssl rsa -in private.pem -pubout > public.pem
+*/
+
 QByteArray getPrivateKey()
 {
     QByteArray byteArray;
@@ -39,7 +46,7 @@ QByteArray getPublicKey()
     QFile fi("public.pem");
     if(fi.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        qDebug() << "File public.pem opened";
+       qDebug() << "File public.pem opened";
        byteArray = fi.readAll();
        fi.close();
     }
@@ -60,6 +67,7 @@ void testRSA()
     TeCypher cypher;
     RSA* pubKey = cypher.getPublicKey(testPublicKey);
     RSA* privKey = cypher.getPrivateKey(testPrivateKey);
+
     if(pubKey && privKey)
     {
         qDebug() << "The keys were successfully loaded...";
@@ -69,7 +77,7 @@ void testRSA()
         qDebug() << "Some errors occured...";
     }
     qDebug() << "Message to encrypte:";
-    QByteArray msg = "The quick brown fox jumps over the lazy dog.";
+    QByteArray msg = "The quick brown fox jumps over the lazy dog!!!";
     qDebug() << msg;
     qDebug() << "Encrypted message:";
     QByteArray encryptedMsg = cypher.enryptRSA(pubKey, msg);
@@ -77,10 +85,47 @@ void testRSA()
     QByteArray decryptedMsg = cypher.decryptRSA(privKey, encryptedMsg);
     qDebug() << "Decrypted message:";
     qDebug() << decryptedMsg;
+
     cypher.freeRSAKey(pubKey);
     cypher.freeRSAKey(privKey);
 
     qDebug() << "The memory was freed...";
+}
+
+void readFile(const QString &filename, QByteArray &data)
+{
+    QFile file(filename);
+    if(!file.open(QFile::ReadOnly))
+    {
+        qCritical() << "Could not open file " << filename;
+        return;
+    }
+    data = file.readAll();
+    file.close();
+}
+
+void writeFile(const QString &filename, QByteArray &data)
+{
+    QFile file(filename);
+    if(!file.open(QFile::WriteOnly))
+    {
+        qCritical() << "Could not open file " << filename;
+        return;
+    }
+    file.write(data);
+    file.close();
+}
+
+bool encryptCombined()
+{
+    TeCypher cypher;
+    QByteArray pubKey = getPublicKey();
+    RSA* rsaPubKey = cypher.getPublicKey(pubKey);
+}
+
+bool decryptCombined()
+{
+
 }
 
 void testAES()
@@ -102,7 +147,7 @@ void testAES()
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-    //testRSA();
+    testRSA();
     testAES();
     signal(SIGINT, cleanup);
     return app.exec();

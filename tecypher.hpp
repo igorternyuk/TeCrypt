@@ -90,6 +90,9 @@ public:
      */
     QByteArray decryptAES(QByteArray &passphrase, QByteArray &data);
 
+    bool encryptCombined();
+    bool decryptCombined();
+
     QByteArray randomBytes(int size);
 
     void freeRSAKey(RSA* key);
@@ -111,6 +114,8 @@ private:
      * @return
      */
     QByteArray readFile(const QString& filename);
+
+    void readFile(const QString &filename, QByteArray &data);
 
     /**
      * @brief writeFile Writes a bytearray to a file

@@ -37,6 +37,7 @@ RSA *TeCypher::getPublicKey(QString &filename)
 RSA *TeCypher::getPrivateKey(QByteArray &data)
 {
     const char* privateKeyStr = data.constData();
+    qDebug() << privateKeyStr;
     BIO* bio = BIO_new_mem_buf((void*)privateKeyStr, -1);
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
     RSA* rsaPrivKey = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
@@ -57,55 +58,62 @@ RSA *TeCypher::getPrivateKey(QString &filename)
 
 QByteArray TeCypher::enryptRSA(RSA *key, QByteArray &data, bool isPublic)
 {
-    QByteArray buffer;
+    QByteArray finished;
     int dataSize = data.length();
-    const unsigned char* str = (const unsigned char*)data.constData();
+    const unsigned char* dataToEcrypt = (const unsigned char*)data.constData();
     int rsaKeySize = RSA_size(key);
 
     unsigned char* encryptedData = (unsigned char*)malloc(rsaKeySize);
     int resultLen = -1;
+
     if(isPublic)
     {
-        resultLen = RSA_public_encrypt(dataSize, str, encryptedData, key, PADDING);
+        resultLen = RSA_public_encrypt(dataSize, dataToEcrypt, encryptedData, key, PADDING);
     }
     else
     {
-        resultLen = RSA_private_encrypt(dataSize, str, encryptedData, key, PADDING);
+        resultLen = RSA_private_encrypt(dataSize, dataToEcrypt, encryptedData, key, PADDING);
     }
-    //int resultLen = RSA_public_encrypt(dataSize, str, encryptedData, key, PADDING);
-    //int resultLen = RSA_private_encrypt(dataSize, str, encryptedData, key, PADDING);
+
+    //resultLen = RSA_public_encrypt(dataSize, dataToEcrypt, encryptedData, key, PADDING);
+
     if(resultLen == -1)
     {
         qCritical() << "Could not encrypt: " << ERR_error_string(ERR_get_error(), NULL);
-        return buffer;
+        return finished;
     }
-    buffer = QByteArray(reinterpret_cast<char*>(encryptedData), resultLen);
-    return buffer;
+    QByteArray encryptedMessage = QByteArray(reinterpret_cast<char*>(encryptedData), resultLen);
+    finished.append(encryptedMessage);
+    free(encryptedData);
+    return finished;
 }
 
 QByteArray TeCypher::decryptRSA(RSA *key, QByteArray &data, bool isPrivate)
 {
-    QByteArray buffer;
-    const unsigned char* encyptedData = (const unsigned char*)data.constData();
+    QByteArray finished;
+    const unsigned char* encryptedData = (const unsigned char*)data.constData();
     int rsaKeyLen = RSA_size(key);
     unsigned char* decryptedData = (unsigned char*)malloc(rsaKeyLen);
     int resultLen = -1;
+
     if(isPrivate)
     {
-        resultLen = RSA_private_decrypt(rsaKeyLen, encyptedData, decryptedData, key, PADDING);
+        resultLen = RSA_private_decrypt(rsaKeyLen, encryptedData, decryptedData, key, PADDING);
     }
     else
     {
-        resultLen = RSA_public_decrypt(rsaKeyLen, encyptedData, decryptedData, key, PADDING);
+        resultLen = RSA_public_decrypt(rsaKeyLen, encryptedData, decryptedData, key, PADDING);
     }
+
     if(resultLen == -1)
     {
         qCritical() << "Could not decrypt: " << ERR_error_string(ERR_get_error(), NULL);
-        return buffer;
+        return finished;
     }
-    buffer = QByteArray::fromRawData((const char*)decryptedData, resultLen);
+    QByteArray decryptedMessage = QByteArray::fromRawData((const char*)decryptedData, resultLen);
+    finished.append(decryptedMessage);
     free(decryptedData);
-    return buffer;
+    return finished;
 }
 
 QByteArray TeCypher::encryptAES(QByteArray &passphrase, QByteArray &data)
@@ -292,6 +300,19 @@ QByteArray TeCypher::readFile(const QString &filename)
     byteArray = fi.readAll();
     fi.close();
     return byteArray;
+}
+
+void TeCypher::readFile(const QString &filename, QByteArray &data)
+{
+    QByteArray byteArray;
+    QFile fi(filename);
+    if(!fi.open(QFile::ReadOnly))
+    {
+        qCritical() << fi.errorString();
+        return;
+    }
+    data = fi.readAll();
+    fi.close();
 }
 
 void TeCypher::writeFile(const QString &filename, QByteArray &data)
