@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QObject>
-#include <QFile>
+
 #include <openssl/rsa.h>
 #include <openssl/engine.h>
 #include <openssl/pem.h>
@@ -26,37 +26,51 @@ public:
     ~TeCypher();
 
     /**
-     * @brief Loads the public key from a byte array
+     * @brief loadPublicKeyByteArrayFromFile
+     * @param pathToPublicKeyFile path to the file with RSA public key
+     * @return true in the case of success and false if the loading fails
+     */
+    bool loadPublicKeyByteArrayFromFile(const QString &pathToPublicKeyFile);
+
+    /**
+     * @brief loadPrivateKeyByteArrayFromFile
+     * @param pathToPrivateKeyFile path to the file with RSA private key
+     * @return true in the case of success and false if the loading fails
+     */
+    bool loadPrivateKeyByteArrayFromFile(const QString &pathToPrivateKeyFile);
+
+    /**
+     * @brief loads the public key from a byte array
      * @param data The byte array
      * @return RSA
      */
-    RSA* getPublicKey(QByteArray &data);
+    RSA* getPublicRSAKey(QByteArray &data);
 
     /**
-     * @brief Loads the public key from a file
+     * @brief loads the public key from a file
      * @param filename file to load
      * @return RSA
      */
-    RSA *getPublicKey(QString &filename);
+    RSA *getPublicRSAKey(QString &filename);
 
     /**
-     * @brief Loads the private key from a byte array
+     * @brief loads the private key from a byte array
      * @param data The byte array
      * @return RSA
      */
-    RSA* getPrivateKey(QByteArray &data);
+    RSA* getPrivateRSAKey(QByteArray &data);
 
     /**
-     * @brief Loads the private key from a file
+     * @brief loads the private key from a file
      * @param filename The file to load
      * @return RSA
      */
-    RSA* getPrivateKey(QString &filename);
+    RSA* getPrivateRSAKey(QString &filename);
 
     /**
      * @brief enryptRSA
      * @param key either RSA public key or RSA private key
-     * @param data The data to enrypt
+     * @param data data to enrypt
      * @param isPublic equals true if the key is RSA public key
      *  and false in the contrary case
      * @return encrypted data
@@ -75,42 +89,67 @@ public:
 
     /**
      * @brief encrypts a byte array with AES 256 CBC
-     * @param passphrase The passphrase byte array
-     * @param data The data to encrypt
+     * @param passphrase passphrase byte array
+     * @param data data to encrypt
      * @return
      */
 
     QByteArray encryptAES(QByteArray &passphrase, QByteArray &data);
 
     /**
-     * @brief decrypts a byte array with AES 256 CBC
-     * @param passphrase The passphrase byte array
-     * @param data The data to decrypt
+     * @brief decryptAES decrypts a byte array encrypted with AES 256 CBC
+     * @param passphrase passphrase byte array
+     * @param data data to decrypt
      * @return
      */
     QByteArray decryptAES(QByteArray &passphrase, QByteArray &data);
 
-    bool encryptFileWithCombinedMethod(QByteArray &passphrase,
-                                       const QString &pathToInputFile,
-                                       const QString &pathToOutputFile);
+    /**
+     * @brief encryptWithCombinedMethod
+     * @param passphrase AES passphrase
+     * @param textToEncrypt the array of bytes to be encrypted
+     * @param encryptedText encrypted text
+     * @return true if the encryption finished with success and false if it fails
+     */
+    bool encryptWithCombinedMethod(QByteArray &passphrase,
+                                   QByteArray &toEncrypt,
+                                   QByteArray &encrypted);
 
-    bool encryptTextWithCombinedMethod(QByteArray &passphrase,
-                                       const QString &textToEncrypt,
-                                       QString &encryptedText);
+    /**
+     * @brief decryptTextWithCombinedMethod
+     * @param passphrase AES passphrase
+     * @param textToDecrypt array of bytes to be decrypted
+     * @param decryptedText decrypted text
+     * @return true if the decryption finished with success and false if it fails
+     */
+    bool decryptWithCombinedMethod(QByteArray &passphrase,
+                                   QByteArray &toDecrypt,
+                                   QByteArray &decrypted);
 
-    bool decryptFileWithCombinedMethod(QByteArray &passphrase,
-                                       const QString &pathToInputFile,
-                                       const QString &pathToOutputFile);
-
-    bool decryptTextWithCombinedMethod(QByteArray &passphrase,
-                                       const QString &textToDecrypt,
-                                       QString &decryptedText);
-
+    /**
+     * @brief randomBytes generates array of random bytes with specified length
+     * @param size length of the generated array of bytes
+     * @return
+     */
     QByteArray randomBytes(int size);
 
+    /**
+     * @brief freeRSAKey deallocates specified RSA key memory
+     * @param key
+     */
     void freeRSAKey(RSA* key);
 
+    /**
+     * @brief getLastError
+     * @return last occured error
+     */
+    QString getLastError() const;
+
 private:
+    QByteArray mPublicKey;
+    QByteArray mPrivateKey;
+    QString mLastError;
+
     /**
      * @brief Initializes OpenSSL library
      */
@@ -122,12 +161,17 @@ private:
     void finalize();
 
     /**
-     * @brief readFile Loads a file and returns a byte array
-     * @param filename A name of a file to read from
+     * @brief readFile loads a file and returns a byte array
+     * @param filename a name of a file to read from
      * @return
      */
     QByteArray readFile(const QString& filename);
 
+    /**
+     * @brief readFile loads a files content to the array of bytes
+     * @param filename a name of a file to read from
+     * @param data array of bytes to load to
+     */
     void readFile(const QString &filename, QByteArray &data);
 
     /**

@@ -65,8 +65,8 @@ void testRSA()
     QByteArray testPublicKey = getPublicKey();
     QByteArray testPrivateKey = getPrivateKey();
     TeCypher cypher;
-    RSA* pubKey = cypher.getPublicKey(testPublicKey);
-    RSA* privKey = cypher.getPrivateKey(testPrivateKey);
+    RSA* pubKey = cypher.getPublicRSAKey(testPublicKey);
+    RSA* privKey = cypher.getPrivateRSAKey(testPrivateKey);
 
     if(pubKey && privKey)
     {
@@ -124,7 +124,7 @@ bool encryptCombined()
 {
     TeCypher cypher;
     QByteArray pubKey = getPublicKey();
-    RSA* rsaPubKey = cypher.getPublicKey(pubKey);
+    RSA* rsaPubKey = cypher.getPublicRSAKey(pubKey);
     QByteArray passphrase = cypher.randomBytes(8); //Here must be user password
     QByteArray encryptedKey = cypher.enryptRSA(rsaPubKey, passphrase);
     qDebug() << "Encrypted RSA key => " << encryptedKey;
@@ -168,10 +168,11 @@ bool decryptCombined()
     QByteArray encryptedData = data.mid(256);
 
     QByteArray key = getPrivateKey(); //The problem
-    RSA* privateKey = cypher.getPrivateKey(key);
+    RSA* privateKey = cypher.getPrivateRSAKey(key);
     QByteArray passphrase = cypher.decryptRSA(privateKey, encryptedKey);
     cypher.freeRSAKey(privateKey);
     qDebug() << "AES passphrase: " << passphrase;
+
 
     QByteArray plainText = cypher.decryptAES(passphrase, encryptedData);
     if(plainText.isEmpty())
@@ -190,6 +191,25 @@ void testCombinedEncryption()
     {
         decryptCombined();
     }
+}
+
+void testCombinedEncryption2()
+{
+    TeCypher cypher;
+    cypher.loadPublicKeyByteArrayFromFile("public.pem");
+    cypher.loadPrivateKeyByteArrayFromFile("private.pem");
+    QByteArray password = "!!!@@@###$$$^^^&&&&5555mp3";
+    QByteArray textToEcrypt = "The quick brown FOX jumps over the lazy dog!!!!!!!!";
+    qDebug() << "Text to encrypt: ";
+    qDebug() << textToEcrypt;
+    QByteArray encryptedBytes;
+    cypher.encryptWithCombinedMethod(password, textToEcrypt, encryptedBytes);
+    qDebug() << "Encrypted bytes: ";
+    qDebug() << encryptedBytes;
+    QByteArray decryptedBytes;
+    cypher.decryptWithCombinedMethod(password, encryptedBytes, decryptedBytes);
+    qDebug() << "Decrypted bytes: ";
+    qDebug() << decryptedBytes;
 }
 
 void testAES()
@@ -211,9 +231,9 @@ void testAES()
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-    testRSA();
-    testAES();
-    testCombinedEncryption();
+    //testRSA();
+    //testAES();
+    testCombinedEncryption2();
     signal(SIGINT, cleanup);
     return app.exec();
 }
