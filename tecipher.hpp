@@ -140,6 +140,27 @@ public:
     void freeRSAKey(RSA* key);
 
     /**
+     * @brief readFile loads a file and returns a byte array
+     * @param filename a name of a file to read from
+     * @return
+     */
+    QByteArray readFile(const QString& filename);
+
+    /**
+     * @brief readFile loads a files content to the array of bytes
+     * @param filename a name of a file to read from
+     * @param data array of bytes to load to
+     */
+    bool readFile(const QString &filename, QByteArray &data);
+
+    /**
+     * @brief writeFile Writes a bytearray to a file
+     * @param filename A name of a file to write to
+     * @param data The byte array to write
+     */
+    bool writeFile(const QString& filename, QByteArray &data);
+
+    /**
      * @brief getLastError
      * @return last occured error
      */
@@ -159,25 +180,4 @@ private:
      * @brief Finalizes OpenSSL library
      */
     void finalize();
-
-    /**
-     * @brief readFile loads a file and returns a byte array
-     * @param filename a name of a file to read from
-     * @return
-     */
-    QByteArray readFile(const QString& filename);
-
-    /**
-     * @brief readFile loads a files content to the array of bytes
-     * @param filename a name of a file to read from
-     * @param data array of bytes to load to
-     */
-    void readFile(const QString &filename, QByteArray &data);
-
-    /**
-     * @brief writeFile Writes a bytearray to a file
-     * @param filename A name of a file to write to
-     * @param data The byte array to write
-     */
-    void writeFile(const QString& filename, QByteArray &data);
 };

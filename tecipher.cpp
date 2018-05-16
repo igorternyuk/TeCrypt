@@ -341,7 +341,7 @@ bool TeCipher::encryptWithCombinedMethod(QByteArray &passphrase,
     }
     RSA* rsaPubKey = this->getPublicRSAKey(mPublicKey);
     QByteArray encryptedKey = this->enryptRSA(rsaPubKey, passphrase);
-    //this->freeRSAKey(rsaPubKey);
+    this->freeRSAKey(rsaPubKey);
     QByteArray encryptedData = this->encryptAES(passphrase, toEncrypt);
     if(encryptedData.isEmpty())
     {
@@ -379,10 +379,14 @@ bool TeCipher::decryptWithCombinedMethod(QByteArray &passphrase,
 
     RSA* privateKey = this->getPrivateRSAKey(mPrivateKey);
     QByteArray decryptedPassphrase = this->decryptRSA(privateKey, encryptedKey);
-    //this->freeRSAKey(privateKey);
+    this->freeRSAKey(privateKey);
 
     if(decryptedPassphrase != passphrase)
     {
+        qDebug() << "decryptedPassphrase:";
+        qDebug() << decryptedPassphrase;
+        qDebug() << "Your passphrase:";
+        qDebug() << passphrase;
         mLastError = "Wrong passphrase";
         qCritical() << mLastError;
         return false;
@@ -449,7 +453,7 @@ QByteArray TeCipher::readFile(const QString &filename)
     return byteArray;
 }
 
-void TeCipher::readFile(const QString &filename, QByteArray &data)
+bool TeCipher::readFile(const QString &filename, QByteArray &data)
 {
     QByteArray byteArray;
     QFile fi(filename);
@@ -457,21 +461,23 @@ void TeCipher::readFile(const QString &filename, QByteArray &data)
     {
         mLastError = fi.errorString();
         qCritical() << mLastError;
-        return;
+        return false;
     }
     data = fi.readAll();
     fi.close();
+    return true;
 }
 
-void TeCipher::writeFile(const QString &filename, QByteArray &data)
+bool TeCipher::writeFile(const QString &filename, QByteArray &data)
 {
     QFile fo(filename);
     if(!fo.open(QFile::WriteOnly))
     {
         mLastError = fo.errorString();
         qCritical() << mLastError;
-        return;
+        return false;
     }
     fo.write(data);
     fo.close();
+    return true;
 }
