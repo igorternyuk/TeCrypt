@@ -193,6 +193,23 @@ void testCombinedEncryption()
     }
 }
 
+
+void testAES()
+{
+    qDebug() << "Testing AES...";
+    QByteArray passphrase = "contrasenya";
+    TeCipher cipher;
+    qDebug() << "Message to encrypte:";
+    QByteArray msg = "The quick brown fox jumps over the lazy dog.";
+    qDebug() << msg;
+    QByteArray encryptedMsg = cipher.encryptAES(passphrase, msg);
+    qDebug() << "Encrypted message:";
+    qDebug() << encryptedMsg;
+    QByteArray decryptedMsg = cipher.decryptAES(passphrase, encryptedMsg);
+    qDebug() << "Decrypted message:";
+    qDebug() << decryptedMsg;
+}
+
 void testCombinedEncryption2()
 {
     TeCipher cipher;
@@ -212,20 +229,52 @@ void testCombinedEncryption2()
     qDebug() << decryptedBytes;
 }
 
-void testAES()
+void testPlainTextEncryption()
 {
-    qDebug() << "Testing AES...";
-    QByteArray passphrase = "contrasenya";
+    qDebug() << "Plain text encryption test...";
     TeCipher cipher;
-    qDebug() << "Message to encrypte:";
-    QByteArray msg = "The quick brown fox jumps over the lazy dog.";
-    qDebug() << msg;
-    QByteArray encryptedMsg = cipher.encryptAES(passphrase, msg);
-    qDebug() << "Encrypted message:";
-    qDebug() << encryptedMsg;
-    QByteArray decryptedMsg = cipher.decryptAES(passphrase, encryptedMsg);
-    qDebug() << "Decrypted message:";
-    qDebug() << decryptedMsg;
+    cipher.loadPublicKeyByteArrayFromFile("public.pem");
+    cipher.loadPrivateKeyByteArrayFromFile("private.pem");
+    QString password = "ParolNaGorshkeSidelKorol";
+    QString textToEncrypt = "«Ля́пис Трубецко́й» — белорусская панк-рок-группа, названная"
+                            " в честь комического героя романа Ильи Ильфа и"
+                            " Евгения Петрова «Двенадцать стульев»,"
+                            " поэта-халтурщика Никифора Ляписа, "
+                            " который печатался под псевдонимом Трубецкой."
+                            " 17 марта 2014 года Сергей Михалок объявил о роспуске группы,"
+                            " и 31 августа группа прекратила свою деятельность";
+    qDebug() << "Text to encrypt: ";
+    qDebug() << textToEncrypt;
+    QString encryptedText;
+    if(!cipher.encryptPlainTextWithCombinedMethod(password, textToEncrypt,
+                                                  encryptedText))
+    {
+        qCritical() << "Encryption failed: " << cipher.getLastError();
+        return;
+    }
+    qDebug() << "Encrypted text: ";
+    qDebug() << encryptedText;
+
+    QString decryptedText;
+    if(!cipher.decryptPlainTextWithCombinedMethod(password, encryptedText,
+                                                  decryptedText))
+    {
+        qCritical() << "Decryption failed: " << cipher.getLastError();
+        return;
+    }
+    qDebug() << "Decrypted text: ";
+    qDebug() << decryptedText;
+}
+
+void testFileEncryption()
+{
+    qDebug() << "File encryption test...";
+    TeCipher cipher;
+    cipher.loadPublicKeyByteArrayFromFile("public.pem");
+    cipher.loadPrivateKeyByteArrayFromFile("private.pem");
+    QString password = "ParolNaGorshkeSidelKorol";
+    cipher.encryptFileWithCombinedMethod(password, "lapiz.txt", "lapiz.enc");
+    cipher.decryptFileWithCombinedMethod(password, "lapiz.enc", "lapiz.dec");
 }
 
 int main(int argc, char *argv[])
@@ -233,7 +282,9 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     //testRSA();
     //testAES();
-    testCombinedEncryption2();
+    //testCombinedEncryption2();
+    testPlainTextEncryption();
+    //testFileEncryption();
     signal(SIGINT, cleanup);
     return app.exec();
 }

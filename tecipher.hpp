@@ -127,6 +127,50 @@ public:
                                    QByteArray &decrypted);
 
     /**
+     * @brief encryptPlainTextWithCombinedMethod
+     * @param password aes password
+     * @param textToEcrypt text to be encrypted
+     * @param encryptedText encrypted text
+     * @return true if the encryption finished with success and false if it fails
+     */
+    bool encryptPlainTextWithCombinedMethod(const QString &password,
+                                            QString &textToEcrypt,
+                                            QString &encryptedText);
+
+    /**
+     * @brief decryptPlainTextWithCombinedMethod
+     * @param password aes password
+     * @param textToDecrypt text to be decrypted
+     * @param decryptedText decrypted text
+     * @return true if the decryption finished with success and false if it fails
+     */
+    bool decryptPlainTextWithCombinedMethod(const QString &password,
+                                            QString &textToDecrypt,
+                                            QString &decryptedText);
+
+    /**
+     * @brief encryptFileWithCombinedMethod
+     * @param password aes password
+     * @param pathToInputFile path to the file to be encrypted
+     * @param pathToOutputFile path to the target encrypted file
+     * @return true if the encryption finished with success and false if it fails
+     */
+    bool encryptFileWithCombinedMethod(const QString &password,
+                                       const QString &pathToInputFile,
+                                       const QString &pathToOutputFile);
+
+    /**
+     * @brief decryptFileWithCombinedMethod
+     * @param password aes password
+     * @param pathToInputFile path to the file to be decrypted
+     * @param pathToOutputFile path to the target decrypted file
+     * @return true if the decryption finished with success and false if it fails
+     */
+    bool decryptFileWithCombinedMethod(const QString &password,
+                                       const QString &pathToInputFile,
+                                       const QString &pathToOutputFile);
+
+    /**
      * @brief randomBytes generates array of random bytes with specified length
      * @param size length of the generated array of bytes
      * @return

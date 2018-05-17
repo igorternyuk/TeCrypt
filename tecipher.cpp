@@ -1,4 +1,5 @@
 #include "tecipher.hpp"
+#include <QTextCodec>
 #include <QFile>
 #include <QDebug>
 
@@ -404,6 +405,104 @@ bool TeCipher::decryptWithCombinedMethod(QByteArray &passphrase,
 
     decrypted.clear();
     decrypted.append(plainText);
+    return true;
+}
+
+bool TeCipher::encryptPlainTextWithCombinedMethod(const QString &password,
+                                                  QString &textToEcrypt,
+                                                  QString &encryptedText)
+{
+    QByteArray passphrase;
+    passphrase.append(password);
+
+    QByteArray inputData;
+    inputData.append(textToEcrypt);
+    QByteArray encryptedData;
+
+    if(!encryptWithCombinedMethod(passphrase, inputData, encryptedData))
+    {
+        qCritical() << "Could not encrypt";
+        return false;
+    }
+    qDebug() << "encryptedData:" << encryptedData;
+    encryptedText.clear();
+    encryptedText.append(encryptedData.toBase64());
+    return true;
+}
+
+bool TeCipher::decryptPlainTextWithCombinedMethod(const QString &password,
+                                                  QString &textToDecrypt,
+                                                  QString &decryptedText)
+{
+    QByteArray passphrase;
+    passphrase.append(password);
+
+    QByteArray buffer;
+    buffer.append(textToDecrypt);
+    QByteArray enctyptedBytes = QByteArray::fromBase64(buffer);
+    QByteArray decryptedData;
+
+    if(!decryptWithCombinedMethod(passphrase, enctyptedBytes, decryptedData))
+    {
+        qCritical() << "Could not decrypt";
+        return false;
+    }
+
+    decryptedText.clear();
+    decryptedText.append(decryptedData);
+    return true;
+}
+
+bool TeCipher::encryptFileWithCombinedMethod(const QString &password,
+                                             const QString &pathToInputFile,
+                                             const QString &pathToOutputFile)
+{
+    qDebug() << "Encryption...";
+    QByteArray passphrase;
+    passphrase.append(password);
+    QByteArray inputData;
+    readFile(pathToInputFile, inputData);
+    qDebug() << "Input data: " << inputData;
+    QByteArray encryptedData;
+
+    if(!encryptWithCombinedMethod(passphrase, inputData, encryptedData))
+    {
+        qCritical() << "Encryption error: " << getLastError();
+        return false;
+    }
+    qDebug() << "Encrypted data: " << encryptedData;
+
+    if(!writeFile(pathToOutputFile, encryptedData))
+    {
+        qCritical() << "Could not write the output file: " << getLastError();
+        return false;
+    }
+    return true;
+}
+
+bool TeCipher::decryptFileWithCombinedMethod(const QString &password,
+                                             const QString &pathToInputFile,
+                                             const QString &pathToOutputFile)
+{
+    qDebug() << "Decryption...";
+    QByteArray passphrase;
+    passphrase.append(password);
+    QByteArray inputData;
+    readFile(pathToInputFile, inputData);
+    qDebug() << "Encrypted data: " << inputData;
+    QByteArray decryptedData;
+    if(!decryptWithCombinedMethod(passphrase, inputData, decryptedData))
+    {
+        qCritical() << "Decryption error: " << getLastError();
+        return false;
+    }
+
+    if(!writeFile(pathToOutputFile, decryptedData))
+    {
+        qCritical() << "Could not write the output file: " << getLastError();
+        return false;
+    }
+    qDebug() << "decryptedData: " << decryptedData;
     return true;
 }
 
